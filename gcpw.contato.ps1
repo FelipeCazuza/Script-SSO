@@ -21,7 +21,7 @@ param (
 )
 
 <# Adicione domínios para restringir aqui #>
-$domainsAllowedToLogin = "contatoseguro.com.br,compliancetotal.com.br"
+$domainsAllowedToLogin = "contatoseguro.com.br,compliancetotal.com.br,compliancestation.com.br"
 <# Downloads mais rápidos Invoke-WebRequest #>
 $ProgressPreference = 'SilentlyContinue'
 <# Chrome Enterprise Enrollment token #>
