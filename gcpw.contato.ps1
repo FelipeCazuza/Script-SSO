@@ -1,17 +1,8 @@
-<# Este script baixa o provedor de credenciais do Google para Windows
-https://tools.google.com/dlpage/gcpw/, em seguida, instala e configura.
-É necessário acesso de administrador do Windows para usar o script.
-Se o Chrome Enterprise não estiver presente, ele também fará o download e instalará
-e irá inscrevê-los no Chrome Enterprise
+<# Este script baixa o provedor de credenciais do Google para Windows e o Google Chrome
+em seguida, instala e configura os dominios do CS, CT E CSR.
 #>
 
-<# Especifique um parâmetro -user se quiser vincular a conta do usuário atual a uma conta do Google.
--User contatoseguro.com.br-> especificar e-mail para cadastrar conta atual do windows
--MDMvalue 1 -> para ativar o registro automático de MDM no Google Endpoint Management
--ValidityPeriod 30 -> Para alterar o número de dias que uma conta pode ser usada sem se conectar ao Google
-Execute o script como abaixo, certifique-se de verificar os parâmetros:
-powershell.exe -ExecutionPolicy Unrestricted -NoLogo -NoProfile -Command "& '. \ gcpw_enrollment.ps1' -Nome de usuário.lastname@domain.com -MDMvalue 1""
-#>
+
 
 <# Parametros padroes #>
 param (
@@ -20,9 +11,9 @@ param (
     [int]$ValidityPeriod = 30
 )
 
-<# Adicione domínios para restringir aqui #>
+<# Adicione os dominios para restringir aqui #>
 $domainsAllowedToLogin = "contatoseguro.com.br,compliancetotal.com.br,compliancestation.com.br"
-<# Downloads mais rápidos Invoke-WebRequest #>
+<# Downloads mais rÃ¡pidos Invoke-WebRequest #>
 $ProgressPreference = 'SilentlyContinue'
 <# Chrome Enterprise Enrollment token #>
 $enrollmentToken = 'AddTokenHere'
@@ -30,10 +21,10 @@ $enrollmentToken = 'AddTokenHere'
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName PresentationFramework
 
-<# Verifique se um ou mais domínios estão definidos #>
+<# Verifique se um ou mais domÃ­nios estÃ£o definidos #>
 if ($domainsAllowedToLogin.Equals('')) {
-    # $msgResult = [System.Windows.MessageBox]::Show('A lista de domínios nao pode estar vazia! .', 'GCPW', 'OK', 'Error')
-    Write-Output 'A lista de domínios não pode estar vazia!'
+    # $msgResult = [System.Windows.MessageBox]::Show('A lista de dominios nao pode estar vazia! .', 'GCPW', 'OK', 'Error')
+    Write-Output 'A lista de dominios não pode estar vazia!'
     exit 5
 }
 
@@ -42,57 +33,25 @@ function Is-Admin() {
     return $admin
 }
 
-<# Verifique se o usuário atual é um administrador e saia se não for. #>
+<# Verifique se o usuario atual é um administrador e saia se não for. #>
 if (-not (Is-Admin)) {
     # $result = [System.Windows.MessageBox]::Show('Please run as administrator!', 'GCPW', 'OK', 'Error')
     Write-Output 'Por favor, execute como administrador!'
     exit 5
 }
+<# Baixe o instalador do Chrome. #>
 
-if (!(Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -match "Google Chrome" })) {
-    <# Escolha o arquivo do Chrome para fazer o download, As versões de 32 bits ou 64 bits. #>
-    $chromeFileName = 'googlechromestandaloneenterprise.msi'
-    if ([Environment]::Is64BitOperatingSystem) {
-        $chromeFileName = 'googlechromestandaloneenterprise64.msi'
-    }
+$LocalTempDir = $env:TEMP; $ChromeInstaller = "ChromeInstaller.exe"; (new-object System.Net.WebClient).
+DownloadFile('http://dl.google.com/chrome/install/375.126/chrome_installer.exe', "$LocalTempDir\$ChromeInstaller");
+ & "$LocalTempDir\$ChromeInstaller" /silent /install; $Process2Monitor = "ChromeInstaller"; Do { $ProcessesFound = Get-Process | Where-Object {$Process2Monitor -contains $_.Name} | Select-Object -ExpandProperty Name; 
+ 
+ If ($ProcessesFound) { "Still running: $($ProcessesFound -join ', ')" | Write-Host; Start-Sleep -Seconds 2
+ 
+} else{ Remove-Item "$LocalTempDir\$ChromeInstaller" -ErrorAction SilentlyContinue -Verbose } } Until (!$ProcessesFound)
 
-    <# Baixe o instalador do Chrome. #>
-    $chromeUrlPrefix = 'https://dl.google.com/chrome/install/'
-    $chromeUri = $chromeUrlPrefix + $chromeFileName
-    Write-Host 'Downloading Chrome from' $chromeUri
-    Invoke-WebRequest -Uri $chromeUri -OutFile "$env:temp\$chromeFileName"
 
-    <# Execute o instalador do Chrome e espere a instalação terminar #>
-    $arguments = "/i `"$env:temp\$chromeFileName`" /qn"
-    $installProcess = (Start-Process msiexec.exe -ArgumentList $arguments -PassThru -Wait)
-
-    <# Verifique se a instalação foi bem sucedida #>
-    if ($installProcess.ExitCode -ne 0) {
-        # $result = [System.Windows.MessageBox]::Show('Installation failed!', 'Chrome', 'OK', 'Error')
-        exit $installProcess.ExitCode
-    }
-    else {
-        Write-Host 'Chrome instalado com sucesso'
-        # $result = [System.Windows.MessageBox]::Show('Installation completed successfully!', 'Chrome', 'OK', 'Info')
-        # Apply local Chrome Enterprise settings for enrollment
-        Write-Output 'Enforcing Chrome Enterprise Config'
-        $key = 'HKLM:\SOFTWARE\Policies\Google\Chrome'
-        New-Item -Path $key -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'CloudManagementEnrollmentMandatory' -Value 1 -PropertyType 'DWord' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'CloudManagementEnrollmentToken' -Value $enrollmentToken -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'BrowserSignin' -Value 2 -PropertyType 'DWord' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'RestrictSigninToPattern' -Value '' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'AllowedDomainsForApps' -Value '' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'CloudPolicyOverridesPlatformPolicy' -Value 1 -PropertyType 'DWord' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'DefaultBrowserSettingEnabled' -Value 1 -PropertyType 'DWord' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'PasswordLeakDetectionEnabled' -Value 1 -PropertyType 'DWord' -Force | Out-Null
-        New-ItemProperty -Path $key -Name 'RelaunchNotification' -Value 2 -PropertyType 'DWord' -Force | Out-Null
-
-        Write-Output 'Chrome Enterprise instalado .'
-    }
-
-}else {
-    Write-Output 'Chrome Enterprise instalado...'
+else {
+    Write-Output 'Chrome instalado...'
 }
 
 if (!(Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -match "Google Credential Provider for Windows" })) {
@@ -120,13 +79,13 @@ if (!(Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Un
     }
     else {
         # $result = [System.Windows.MessageBox]::Show('Installation completed successfully!', 'GCPW', 'OK', 'Info')
-        Write-Output 'Instalação concluída com sucesso!'
+        Write-Output 'Instalação concluida com sucesso!'
     }
 } else {
     Write-Output 'GCPW alreaday installed. Skipping...'
 }
 
-<# Defina a chave de registro necessária com os domínios permitidos #>
+<# Defina a chave de registro com os dominios permitidos #>
 $registryPath = 'HKEY_LOCAL_MACHINE\Software\Google\GCPW'
 $name = 'domains_allowed_to_login'
 [microsoft.win32.registry]::SetValue($registryPath, $name, $domainsAllowedToLogin)
@@ -151,11 +110,11 @@ $validity = Get-ItemPropertyValue HKLM:\Software\Google\GCPW -Name $name
 
 if ($validity -eq $value) {
     # $msgResult = [System.Windows.MessageBox]::Show('Configuration completed successfully!', 'GCPW', 'OK', 'Info')
-    Write-Output 'Configuração de validade concluída com sucesso!'
+    Write-Output 'Configuração de validade concluida com sucesso!'
 }
 else {
     # $msgResult = [System.Windows.MessageBox]::Show('Could not write to registry. Configuration was not completed.', 'GCPW', 'OK', 'Error')
-    Write-Output "Não foi possível gravar a validade no registro, configuração não foi completada. ($domains - $domainsAllowedToLogin)"
+    Write-Output "Não foi possivel gravar a validade no registro, configuração não foi completada. ($domains - $domainsAllowedToLogin)"
 }
 
 <# Set MDM enrollment #>
@@ -167,14 +126,14 @@ $validity = Get-ItemPropertyValue HKLM:\Software\Google\GCPW -Name $name
 
 if ($validity -eq $MDMvalue) {
     # $msgResult = [System.Windows.MessageBox]::Show('Configuration completed successfully!', 'GCPW', 'OK', 'Info')
-    Write-Output 'Configuração de inscrição MDM concluída com sucesso!'
+    Write-Output 'Configuração de inscrição MDM concluida com sucesso!'
 }
 else {
     # $msgResult = [System.Windows.MessageBox]::Show('Could not write to registry. Configuration was not completed.', 'GCPW', 'OK', 'Error')
-    Write-Output "Não foi possível gravar a inscrição do MDM no registro. A configuração não foi concluída. (MDM -> $MDMvalue)"
+    Write-Output "Não foi posssivel gravar a inscrição do MDM no registro. A configuração não foi concluida. (MDM -> $MDMvalue)"
 }
 
-<# se usuario for definido com uma conta de e-mail válida do Google, a conta atual será vinculada a ela #>
+<# se usuario for definido com uma conta de e-mail valida do Google, a conta atual sera vinculada a ela #>
 if ($User) {
     Write-Output "Setting user to $User"
     $currentSid = Get-CimInstance Win32_UserAccount -Filter "Name = '$env:USERNAME'" | Select-Object -ExpandProperty SID
@@ -191,6 +150,6 @@ if ($User) {
     }
     else {
         # $msgResult = [System.Windows.MessageBox]::Show('Could not write to registry. Configuration was not completed.', 'GCPW', 'OK', 'Error')
-        Write-Output "Não foi possível gravar o usuário no registro. A configuração não foi completada. (User -> $User)"
+        Write-Output "Não foi possivel gravar o usuario no registro. A configuração não foi completada. (User -> $User)"
     }
 }
