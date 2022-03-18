@@ -50,9 +50,8 @@ DownloadFile('http://dl.google.com/chrome/install/375.126/chrome_installer.exe',
 } else{ Remove-Item "$LocalTempDir\$ChromeInstaller" -ErrorAction SilentlyContinue -Verbose } } Until (!$ProcessesFound)
 
 
-else {
     Write-Output 'Chrome instalado...'
-}
+
 
 if (!(Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' | Where-Object { $_.DisplayName -match "Google Credential Provider for Windows" })) {
     <# Escolha o arquivo GCPW para fazer o download. As versões de 32 bits ou 64 bits #>
@@ -94,7 +93,7 @@ $domains = Get-ItemPropertyValue HKLM:\Software\Google\GCPW -Name $name
 
 if ($domains -eq $domainsAllowedToLogin) {
     # $msgResult = [System.Windows.MessageBox]::Show('Configuration completed successfully!', 'GCPW', 'OK', 'Info')
-    Write-Output 'Domain configuration completed successfully!'
+    Write-Output 'Dominio configurado com sucesso!'
 }
 else {
     # $msgResult = [System.Windows.MessageBox]::Show('Could not write to registry. Configuration was not completed.', 'GCPW', 'OK', 'Error')
@@ -146,7 +145,7 @@ if ($User) {
 
     if ($userCheck -eq $User) {
         # $msgResult = [System.Windows.MessageBox]::Show('Configuration completed successfully!', 'GCPW', 'OK', 'Info')
-        Write-Output 'User configuration completed successfully!'
+        Write-Output 'Configuração do usuário concluída com sucesso!'
     }
     else {
         # $msgResult = [System.Windows.MessageBox]::Show('Could not write to registry. Configuration was not completed.', 'GCPW', 'OK', 'Error')
