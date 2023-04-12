@@ -1,5 +1,5 @@
 <# Este script baixa o provedor de credenciais do Google para Windows e o Google Chrome
-em seguida, instala e configura os dominios do CS, CT E CSR.
+em seguida, instala e configura o dominio.
 #>
 
 
@@ -12,7 +12,7 @@ param (
 )
 
 <# Adicione os dominios para restringir aqui #>
-$domainsAllowedToLogin = "contatoseguro.com.br,compliancetotal.com.br,compliancestation.com.br"
+$domainsAllowedToLogin = "teste@meudominio"
 <# Downloads mais rÃ¡pidos Invoke-WebRequest #>
 $ProgressPreference = 'SilentlyContinue'
 <# Chrome Enterprise Enrollment token #>
@@ -21,7 +21,7 @@ $enrollmentToken = 'AddTokenHere'
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName PresentationFramework
 
-<# Verifique se um ou mais domÃ­nios estÃ£o definidos #>
+<# Verifique se um ou mais dominios estao definidos #>
 if ($domainsAllowedToLogin.Equals('')) {
     # $msgResult = [System.Windows.MessageBox]::Show('A lista de dominios nao pode estar vazia! .', 'GCPW', 'OK', 'Error')
     Write-Output 'A lista de dominios não pode estar vazia!'
