@@ -1,4 +1,4 @@
-# Script para acessar  estação de trabalho com  sistema operacional windows com a conta do Google <h1>
+# Provedor de credenciais do Google para Windows <h1>
 
 * Primeiro passo é alterar $domainsAllowedToLogin = "teste@meudominio" para o seu dominio
 * Segundo passo é converter o programa para extensão EXE. 
