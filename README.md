@@ -1,5 +1,7 @@
 # Script para acessar  estação de trabalho com  sistema operacional windows com a conta do Google <h1>
-* Primeiro Passo é Converter o progeama para EXE. 
+
+* Primeiro passo é alterar $domainsAllowedToLogin = "teste@meudominio" para o seu dominio
+* Segundo passo é converter o programa para extensão EXE. 
 * Para converter um script PowerShell (.ps1) para um arquivo executável (.exe), você pode usar o módulo "PS2EXE". Este módulo permite criar um arquivo  executável a partir de um script PowerShell.
 
 * Abra o PowerShell como administrador.
