@@ -1,10 +1,7 @@
 <# Este script baixa o provedor de credenciais do Google para Windows e o Google Chrome
-em seguida, instala e configura o dominio.
-#>
+em seguida, instala e configura o dominio.#>
 
 
-
-<# Parametros padroes #>
 param (
     [string]$User = "",
     [int]$MDMvalue = 0,
