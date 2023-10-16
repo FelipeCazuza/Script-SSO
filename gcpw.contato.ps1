@@ -2,7 +2,7 @@
 em seguida, instala e configura o dominio.#>
 
 
-param (
+parâmetro (
     [string]$User = "",
     [int]$MDMvalue = 0,
     [int]$ValidityPeriod = 30
